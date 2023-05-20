@@ -1,6 +1,6 @@
-import { Container, Grid, SimpleGrid, Skeleton, useMantineTheme, rem, Text, createStyles, Button, CloseButton, Menu, UnstyledButton, Group, Select, Autocomplete, Loader, Pagination } from '@mantine/core';
+import { Container, Grid, Text, createStyles, Button, Autocomplete, Pagination } from '@mantine/core';
 import { useRef, useState } from 'react';
-import { IconChevronDown, IconSearch, IconStar, IconMapPin } from '@tabler/icons-react';
+import { IconSearch, IconStar, IconMapPin } from '@tabler/icons-react';
 import Filter from './filter.component';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,7 +13,6 @@ const useStyles = createStyles((theme) => ({
 
   vacancies: {
     display: 'flex',
-    flexDdirection: 'column',
     alignItems: 'flex-start',
     padding: 0,
     gap: '16px',
@@ -23,7 +22,7 @@ const useStyles = createStyles((theme) => ({
 
   wrap_vacance: {
     display: 'flex',
-    flexDdirection: 'row',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     padding: '24px',
@@ -35,23 +34,20 @@ const useStyles = createStyles((theme) => ({
 
   vacance: {
     display: 'flex',
-    flexDdirection: 'column',
+    flexDirection: 'column',
     alignItems: 'flex-start',
     padding: 0,
     gap: '12px'
   },
 
   vacance_name: {
-    width: '100%'
   },
 
   vacance_description: {
-    width: '100%'
   },
 
   vacance_location: {
     display: 'flex',
-    width: '100%',
     alignItems: 'center',
     gap: '8px'
   }
