@@ -11,7 +11,7 @@ export default function FavoritesContent() {
   return (
     <>
       {
-        JSON.parse(localStorage.getItem("favorites") || "").length !== 0
+        JSON.parse(localStorage.getItem("favorites") || "[]").length !== 0
           ?
             <Grid
               sx={{

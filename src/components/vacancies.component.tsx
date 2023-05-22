@@ -37,7 +37,7 @@ export default function Vacances({ vacancies }: VacanciesProps) {
   };
 
   useEffect(() => {
-    setFavorites(JSON.parse(localStorage.getItem("favorites") || ""));
+    setFavorites(JSON.parse(localStorage.getItem("favorites") || "[]"));
   }, [])
 
   useEffect(() => {
