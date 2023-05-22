@@ -12,11 +12,13 @@ const Suspended: FC<PropsWithChildren & { element: any }> = ({ element: Element 
 // ======= pages ======= //
 const MainPage = React.lazy(() => import("app/main/main-view.page"));
 const VacancePage = React.lazy(() => import("app/main/vacance.page"));
+const FavoritesPage = React.lazy(() => import("app/favorites"));
 
 const MainRoutes: FC = () => {
   return (
     <Routes>
-      <Route path={"/vacance"} element={<Suspended element={VacancePage} />} />
+      <Route path={"/favorites/*"} element={<Suspended element={FavoritesPage} />} />
+      <Route path={"/vacance/*"} element={<Suspended element={VacancePage} />} />
       <Route path={"/"} element={<Suspended element={MainPage} />} />
 
       {/* DEFAULT */}

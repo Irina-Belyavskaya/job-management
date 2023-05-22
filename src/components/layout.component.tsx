@@ -1,10 +1,11 @@
-import AppHeader from "app/main/components/header.component";
 import { ReactNode } from "react";
 
-export default function Layout({children} : {children: ReactNode}) {
+import AppHeader from "components/header.component";
+
+export default function Layout({ children }: { children: ReactNode }) {
   return (
     <>
-      <AppHeader/>
+      <AppHeader />
       {children}
     </>
   )

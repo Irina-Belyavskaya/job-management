@@ -1,76 +1,93 @@
-import { Grid, Button, CloseButton, Select, Text, createStyles, rem } from "@mantine/core";
-import { IconChevronDown } from "@tabler/icons-react";
+import { useState } from "react";
 
-const useStyles = createStyles((theme) => ({
-  title: {
-    fontFamily: `Greycliff CF, ${theme.fontFamily}`,
-    fontSize: '20px',
-    fontWeight: 700,
+import { Grid, Button, Select, Text, Container, Group, Autocomplete } from "@mantine/core";
+import { IconChevronDown, IconSelector, IconX } from "@tabler/icons-react";
 
-    [theme.fn.smallerThan('sm')]: {
-      fontSize: rem(42),
-      lineHeight: 1.2,
-    },
-  },
+import useStyles from "../styles/filter.styles";
+import { FilterProps } from "../types/filters.type";
 
-  filters: {
-    width: '315px',
-    height: '360px',
-    padding: '20px',
-    backgroundColor: '#FFF',
-    border: 'border: 1px solid #EAEBED',
-    borderRadius: '12px'
-  },
-
-  root: {
-    position: 'relative',
-    width: '100%'
-  },
-
-  input: {
-    height: '50px'
-  },
-
-  label: {
-    fontWeight: 700,
-    fontSize: '16px',
-    lineHeight: '19.36px'
-  }
-}));
-
-export default function Filter() {
+export default function Filter({ catalogues, handleFilter }: FilterProps) {
   const { classes } = useStyles();
+
+  const [selectedCatalogue, setSelectedCatalogue] = useState<string | null>(null);
+  const [paymentFrom, setPaymentFrom] = useState<string | undefined>();
+  const [paymentTo, setPaymentTo] = useState<string | undefined>();
 
   return (
     <Grid gutter={5} className={classes.filters}>
-      <Text className={classes.title}>
-        Фильтры
-      </Text>
-      <Button variant="subtle" color="gray" compact sx={{ marginLeft: 'auto' }}>
-        Сбросить все
-        <CloseButton />
-      </Button>
+      <Container className={classes.container} fluid>
+        <Text fz={'20px'} fw={700} lh={'20px'}>
+          Фильтры
+        </Text>
+        <Button
+          variant="subtle"
+          color="gray"
+          compact
+          className={classes.resetBtn}
+          onClick={() => {
+            setSelectedCatalogue('');
+            setPaymentFrom('');
+            setPaymentTo('');
+            handleFilter(null);
+          }}
+        >
+          Сбросить все
+          <Group ml={'5px'}>
+            <IconX size={'20px'} />
+          </Group>
+        </Button>
+      </Container>
       <Select
+        data-elem="industry-select"
         label="Отрасль"
         placeholder="Выберите отрасль"
         rightSection={<IconChevronDown size="1rem" />}
         rightSectionWidth={30}
         styles={{ rightSection: { pointerEvents: 'none' } }}
         classNames={classes}
-        data={['Разработка ПО', 'Дизайн', 'Обучение']}
+        data={catalogues}
+        dropdownPosition="bottom"
+        value={selectedCatalogue}
+        onChange={setSelectedCatalogue}
       />
-      <Select
+      <Autocomplete
+        data-elem="salary-from-input"
         label="Оклад"
-        data={['50', '100', '200', '300', '400', '500']}
+        data={['0', '1000', '5000', '7000', '10000', '20000', '30000']}
         placeholder="От"
         classNames={classes}
+        value={paymentFrom}
+        onChange={setPaymentFrom}
+        rightSection={
+          <IconSelector
+            height={'26px'}
+            className={classes.selector}
+          />
+        }
       />
-      <Select
-        data={['1000', '2000', '3000', '4000', '5000']}
+      <Autocomplete
+        data-elem="salary-to-input"
+        data={['10000', '50000', '70000', '90000', '100000', '200000']}
         placeholder="До"
         classNames={classes}
+        value={paymentTo}
+        onChange={setPaymentTo}
+        rightSection={
+          <IconSelector
+            height={'26px'}
+            className={classes.selector}
+          />
+        }
       />
-      <Button fullWidth>
+      <Button
+        data-elem="search-button"
+        fullWidth
+        onClick={() => handleFilter({
+          catalogue: selectedCatalogue,
+          from: paymentFrom,
+          to: paymentTo
+        })}
+      >
         Применить
       </Button>
     </Grid>

@@ -1,124 +1,140 @@
-import { Container, Grid, List, Text, createStyles } from "@mantine/core";
-import { IconMapPin, IconStar } from '@tabler/icons-react';
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
-const useStyles = createStyles((theme) => ({
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    padding: 0,
-    gap: '20px',
-    width: '773px',
-    marginTop: '40px',
-    marginBottom: '40px'
-  },
+import { Container, Text } from "@mantine/core";
+import { IconMapPin, IconStar, IconStarFilled } from '@tabler/icons-react';
 
-  wrapper: {
-    backgroundColor: '#FFF',
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    padding: '24px',
-    flexWrap: 'wrap',
-    gap: '20px',
-    width: '773px',
-  },
+import { getVacanceById } from "api/vacances";
 
-  wrap_vacance: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    padding: 0,
-    backgroundColor: '#FFF',
-    borderRadius: '12px',
-    width: '773px',
-  },
+import parse from 'html-react-parser';
 
-  vacance: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    gap: '16px',
-    padding: 0,
-    marginLeft: 0,
-    marginRight: 0
-  },
+import dot from "../../assets/dot.svg";
 
-  vacance_location: {
-    display: 'flex',
-    width: '100%',
-    alignItems: 'center',
-    gap: '8px'
-  },
-
-  wrap_paragraph: {
-    padding: 0,
-    margin: 0
-  }
-}));
+import useStyles from "../styles/vacance-content.styles";
 
 export default function VacanceContent() {
   const { classes } = useStyles();
+  const [params] = useSearchParams();
+
+  const [vacancy, setVacancy] = useState<any>();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [isStart, setIsStart] = useState(true);
+
+  const handleSave = (vacance: any) => {
+    setIsStart(false);
+    const repeat = favorites.find(favorite_vacance => favorite_vacance.id === vacance.id);
+
+    if (repeat) {
+      const newFavorites = favorites.filter(favorite_vacance => favorite_vacance.id !== repeat.id);
+      setFavorites([...newFavorites]);
+    } else {
+      setFavorites([...favorites,vacance]);
+    }
+  };
+
+  useEffect(() => {
+    setFavorites(JSON.parse(localStorage.getItem("favorites") || ""));
+  },[])
+
+  useEffect(() => {
+    if (!isStart)
+      localStorage.setItem("favorites", JSON.stringify(favorites));
+  },[favorites, isStart])
+
+  useEffect(() => {
+    const id = Number(params.get("id")); 
+    if (id) {
+      getVacanceById(id)
+        .then(data => {
+          setVacancy(data);
+          setIsLoading(false);
+          setError('');
+        })
+        .catch((error) => {
+          setIsLoading(false);
+          setError(error.message);
+        });
+    }
+  }, [params])
 
   return (
-    <Container  className={classes.container} fluid >
-      <Container className={classes.wrapper} fluid>
-        <Container className={classes.wrap_vacance}>
-          <Container className={classes.vacance}>
-            <Text fw={700} fz="28px" lh={'34px'}>
-              Менежер-дизайнер
-            </Text>
-            <Text fw={700} fz="20px" lh={'20px'}>
-              ffdfdfd
-            </Text>
-            <Text fw={400} fz="16px" lh={'140%'} className={classes.vacance_location}>
-              <IconMapPin stroke={'1px'}/>
-              Tokio
-            </Text>
-          </Container>     
-          <IconStar/>       
+    <>
+    { !isLoading && vacancy && !error && 
+      <Container  className={classes.container} fluid >
+        <Container className={classes.wrapper} fluid>
+          <Container className={classes.wrap_vacancy}>
+            <Container className={classes.vacancy}>
+              <Text fw={700} fz="28px" lh={'34px'}>
+                {vacancy.profession}
+              </Text>
+              <Container className={classes.container_info}> 
+                <Text fw={600} fz="16px" lh={'20px'}>
+                  з/п от {vacancy.payment_from} {vacancy.currency} 
+                </Text>
+                <img src={dot} alt="dot"/>
+                <Text fw={400} fz="16px" lh={'20px'}>
+                  {vacancy.type_of_work.title}
+                </Text>  
+              </Container>
+              <Text fw={400} fz="16px" className={classes.vacancy_location}>
+                <IconMapPin stroke={'1px'}/>
+                {vacancy.town.title}
+              </Text>
+            </Container>     
+            { favorites.find(favorite_vacancy => favorite_vacancy.id === vacancy.id)
+              ? 
+                <IconStarFilled 
+                  className={classes.iconStarFilled}
+                  onClick={() => {handleSave(vacancy)}}
+                />
+              :
+                <IconStar 
+                  className={classes.iconStar}
+                  onClick={() => {handleSave(vacancy)}}
+                />  
+            }
+          </Container>
+        </Container>
+        <Container className={classes.wrapper} fluid>
+          <Container className={classes.wrap_paragraph} fluid>
+            {parse(vacancy.vacancyRichText)}
+          </Container>
         </Container>
       </Container>
-      <Container className={classes.wrapper} fluid>
-        <Container className={classes.wrap_paragraph} fluid>
-          <Text fw={700} fz="20px" lh={'20px'} mb={'16px'}>
-            Обязанности:
-          </Text>
-          <List sx={{width: '100%'}} withPadding={true}>
-            <List.Item>Clone or download repository from GitHub</List.Item>
-            <List.Item>Install dependencies with yarn</List.Item>
-            <List.Item>To start development server run npm start command</List.Item>
-            <List.Item>Run tests to make sure your changes do not break the build</List.Item>
-            <List.Item>Submit a pull request once you are done</List.Item>
-          </List>
+    }
+    {
+      isLoading && !error && 
+        <Container 
+              my={'204px'}
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '32px',
+                padding: 0
+              }}
+            >
+          <Text fz="xl" fw={700} c="blue">Loading...</Text>
         </Container>
-        <Container className={classes.wrap_paragraph} fluid>
-          <Text fw={700} fz="20px" lh={'20px'} mb={'16px'}>
-            Требования:
-          </Text>
-          <List sx={{width: '100%'}} withPadding={true}>
-            <List.Item>Clone or download repository from GitHub</List.Item>
-            <List.Item>Install dependencies with yarn</List.Item>
-            <List.Item>To start development server run npm start command</List.Item>
-            <List.Item>Run tests to make sure your changes do not break the build</List.Item>
-            <List.Item>Submit a pull request once you are done</List.Item>
-          </List>
-        </Container>
-        <Container className={classes.wrap_paragraph} fluid>
-          <Text fw={700} fz="20px" lh={'20px'} mb={'16px'}>
-            Условия:
-          </Text>
-          <List sx={{width: '100%'}} withPadding={true}>
-            <List.Item>Clone or download repository from GitHub</List.Item>
-            <List.Item>Install dependencies with yarn</List.Item>
-            <List.Item>To start development server run npm start command</List.Item>
-            <List.Item>Run tests to make sure your changes do not break the build</List.Item>
-            <List.Item>Submit a pull request once you are done</List.Item>
-          </List>
-        </Container>
+    }
+    {
+      error && !isLoading && 
+      <Container 
+        my={'204px'}
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '32px',
+          padding: 0
+        }}
+      >
+        <Text fz="xl" fw={700} c="red">{error + '('}</Text>
       </Container>
-    </Container>
+    }
+    </>
   )
 }

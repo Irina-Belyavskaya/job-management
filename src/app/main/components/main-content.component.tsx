@@ -1,148 +1,159 @@
-import { Container, Grid, Text, createStyles, Button, Autocomplete, Pagination } from '@mantine/core';
-import { useRef, useState } from 'react';
-import { IconSearch, IconStar, IconMapPin } from '@tabler/icons-react';
+import { useEffect, useState } from 'react';
+
+import { Container, Grid, Text, Button, Autocomplete } from '@mantine/core';
+import { IconSearch } from '@tabler/icons-react';
+
 import Filter from './filter.component';
-import { useNavigate } from 'react-router-dom';
+import Vacances from 'components/vacancies.component';
+import EmptyPage from 'components/empty-page.component';
 
-const useStyles = createStyles((theme) => ({
-  wrapper: {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '4%'
-  },
+import { auth } from "api/auth";
+import { getCatalogues, getVacancies } from "api/vacances";
 
-  vacancies: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    padding: 0,
-    gap: '16px',
-    width: '70%',
-    justifyContent: 'center'
-  },
+import Cookies from "js-cookie";
 
-  wrap_vacance: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    padding: '24px',
-    backgroundColor: '#FFF',
-    borderRadius: '12px',
-    height: '137px',
-    width: '773px',
-  },
-
-  vacance: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    padding: 0,
-    gap: '12px'
-  },
-
-  vacance_name: {
-  },
-
-  vacance_description: {
-  },
-
-  vacance_location: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  }
-}));
+import useStyles from '../styles/main-content.styles';
+import { Filters } from '../types/filters.type';
 
 export default function AppContent() {
   const { classes } = useStyles();
-  const [activePage, setPage] = useState(1); 
-  const navigate = useNavigate(); 
 
-  const timeoutRef = useRef<number>(-1);
-  const [value, setValue] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [vacancies, setVacancies] = useState<[]>([]);
+
+  const [catalogues, setCatalogues] = useState<string[]>([]);
+
+  const [inputText, setInputText] = useState('');
   const [data, setData] = useState<string[]>([]);
 
-  const handleChange = (val: string) => {
-    setValue(val);
-    setData([]);
+  const [searchVacancies, setSearchVacancies] = useState<any[]>([]);
+  const [isSearch, setIsSearch] = useState(false);
 
-    if (val.trim().length === 0 || val.includes('@')) {
-    } else {
-      setData(['gmail.com', 'outlook.com', 'yahoo.com'].map((provider) => `${val}@${provider}`));
+  useEffect(() => {
+    auth()
+      .then((data) => {
+        Cookies.set('access_token', data.access_token);
+        setError('');
+        getVacancies()
+          .then((data) => {
+            setVacancies(data.objects);
+            setData(data.objects.map((vacance: any) => vacance.profession));
+            setIsLoading(false);
+            setError('');
+          })
+          .catch((error) => {
+            setIsLoading(false);
+            setError(error.message);
+          });
+        getCatalogues()
+          .then((data) => {
+            setCatalogues(data.map((catalogue: any) => catalogue.title_rus));
+            setIsLoading(false);
+            setError('');
+          })
+          .catch((error) => {
+            setIsLoading(false);
+            setError(error.message);
+          });
+      })
+      .catch((error) => {
+        setIsLoading(false);
+        setError(error.message);
+      });
+  }, [])
+
+  const findVacance = () => {
+    if (inputText.length === 0) {
+      setIsSearch(false);
+      setSearchVacancies([]);
     }
+    const findedVacancies = vacancies.filter((vacancy: any) => (
+      vacancy.profession.toLowerCase().includes(inputText.toLowerCase()) ||
+      vacancy.profession.toLowerCase().includes(inputText.toLowerCase())
+    ));
+    setIsSearch(true);
+    setSearchVacancies([...findedVacancies]);
+  };
+
+  const handleFilter = (filters: Filters) => {
+    if (!filters || filters.catalogue === null) {
+      setIsSearch(false);
+      setSearchVacancies([]);
+      return;
+    }
+
+    const findedVacancies: any[] = vacancies.filter((vacancy: any) =>
+      vacancy.payment_from >= Number(filters.from) &&
+      vacancy.payment_to <= Number(filters.to) &&
+      vacancy.catalogues.find(
+        (catalogue: any) => catalogue.title.toLowerCase() === filters.catalogue.toLowerCase()
+      ));
+    setIsSearch(true);
+    setSearchVacancies([...findedVacancies]);
   };
 
   return (
     <Container className={classes.wrapper} fluid py={40}>
-      <Filter/>
+      <Filter catalogues={catalogues} handleFilter={handleFilter} />
       <Grid gutter={5} className={classes.vacancies}>
         <Autocomplete
-          value={value}
+          data-elem="search-input"
+          value={inputText}
           data={data}
           size='md'
           radius={'8px'}
-          onChange={handleChange}
-          icon={<IconSearch/>}
+          onChange={(inputText) => {
+            setInputText(inputText);
+            if (inputText.length === 0)
+              setIsSearch(false);
+          }}
+          icon={<IconSearch />}
           rightSection={
-            <Button size="xs" 
+            <Button
+              data-elem="search-button"
+              size="xs"
               sx={{
-                padding: '4px 20px', 
+                padding: '4px 20px',
                 borderRadius: '8px',
                 marginRight: '52px'
               }}
+              onClick={() => findVacance()}
             >
               Поиск
             </Button>
           }
           placeholder="Введите название вакансии"
-          sx={{width: '100%', height: '48px'}}
-        />        
-        <Grid.Col 
-          className={classes.wrap_vacance} 
-          onClick={() => navigate('/app/vacance')}
-        >
-          <Grid className={classes.vacance}>
-            <Text fw={600} c="blue" fz="20px" className={classes.vacance_name}>Text 1</Text>
-            <Text fw={600} fz="16px" className={classes.vacance_description}>ffdfdfd</Text>
-            <Text fw={400} fz="16px" className={classes.vacance_location}>
-              <IconMapPin stroke={'1px'}/>
-              Tokio
-            </Text>
-          </Grid>     
-          <IconStar/>       
-        </Grid.Col>
-        <Grid.Col className={classes.wrap_vacance}>
-          <Grid className={classes.vacance}>
-            <Text fw={600} c="blue" fz="20px" className={classes.vacance_name}>Text 2</Text>
-            <Text fw={600} fz="16px" className={classes.vacance_description}>ffdfdfd</Text>
-            <Text fw={400} fz="16px" className={classes.vacance_location}>
-              <IconMapPin stroke={'1px'}/>
-              Minsk
-            </Text>
-          </Grid>     
-          <IconStar/>       
-        </Grid.Col>
-        <Grid.Col className={classes.wrap_vacance}>
-          <Grid className={classes.vacance}>
-            <Text fw={600} c="blue" fz="20px" className={classes.vacance_name}>
-              Text 3
-            </Text>
-            <Text fw={600} fz="16px" className={classes.vacance_description}>
-              ffdfdfd
-            </Text>
-            <Text fw={400} fz="16px" className={classes.vacance_location}>
-              <IconMapPin stroke={'1px'}/>
-              New-York
-            </Text>
-          </Grid>     
-          <IconStar/>       
-        </Grid.Col>
-        <Pagination 
-          size="sm" 
-          value={activePage} 
-          onChange={setPage} 
-          total={3}
+          sx={{ width: '100%', height: '48px' }}
         />
+
+        {
+          !isLoading && vacancies && !error && vacancies.length !== 0 &&
+          !isSearch &&
+          <Vacances vacancies={vacancies} />
+        }
+        {
+          !isLoading && vacancies && !error && vacancies.length !== 0 &&
+          isSearch && searchVacancies.length !== 0 &&
+          <Vacances vacancies={searchVacancies} />
+        }
+        {
+          !isLoading && vacancies && !error && vacancies.length !== 0 &&
+          isSearch && searchVacancies.length === 0 &&
+          <EmptyPage my={'0'} children={undefined} />
+        }
+        {
+          !isLoading && vacancies && !error && vacancies.length === 0 &&
+          <EmptyPage my={'0'}> </EmptyPage>
+        }
+        {
+          isLoading && !error &&
+          <Text fz="xl" fw={700} c="blue">Loading...</Text>
+        }
+        {
+          error && !isLoading &&
+          <Text fz="xl" fw={700} c="red">{error + '('}</Text>
+        }
       </Grid>
     </Container>
   );

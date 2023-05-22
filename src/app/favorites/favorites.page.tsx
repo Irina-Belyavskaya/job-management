@@ -1,11 +1,10 @@
-import AppContent from "./components/main-content.component";
 import Layout from "components/layout.component";
-
+import FavoritesContent from "./components/favorites-content.component";
 
 export default function MainPage() {
   return (
     <Layout>
-      <AppContent/>
+      <FavoritesContent/>
     </Layout>
   );
 }
